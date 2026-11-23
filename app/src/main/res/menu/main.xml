@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/action_view" android:icon="@drawable/ic_list" android:title="@string/view_all" app:showAsAction="always" />
+    <item android:id="@+id/action_view" android:title="@string/view_all" app:showAsAction="never" />
     <item android:id="@+id/action_url" android:icon="@drawable/ic_link" android:title="@string/open_url" app:showAsAction="ifRoom" />
     <item android:id="@+id/action_settings" android:icon="@drawable/ic_tune" android:title="@string/settings" app:showAsAction="ifRoom" />
     <item android:id="@+id/action_size" android:title="@string/display_size" app:showAsAction="never" />

@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var allVideos: List<VideoItem> = emptyList()
     private var root = FolderNode("", null)
     private var current = root
+    private var looseFolder: FolderNode? = null
     private var restorePath: List<String>? = null
 
     private val backToParent = object : OnBackPressedCallback(false) {
@@ -78,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         prefs = Prefs(this)
+        prefs.browseFolders = true // always start on the folder browser
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener { goUp() }
@@ -150,11 +152,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu.findItem(R.id.action_view)?.apply {
-            if (prefs.browseFolders) {
-                setIcon(R.drawable.ic_list); setTitle(R.string.view_all)
-            } else {
-                setIcon(R.drawable.ic_folder); setTitle(R.string.view_folders)
-            }
+            setTitle(if (prefs.browseFolders) R.string.view_all else R.string.view_folders)
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -201,7 +199,7 @@ class MainActivity : AppCompatActivity() {
             adapter.submit(allVideos.sortedByDescending { it.dateAdded }.map { LibraryAdapter.Row.Video(it, showFolder = true) })
         } else {
             toolbar.title = if (atRoot) getString(R.string.app_name) else current.name
-            toolbar.subtitle = if (atRoot) "Folders with videos"
+            toolbar.subtitle = if (atRoot) "Choose a folder"
             else current.path.dropLast(1).joinToString(" › ").ifEmpty { "Storage" }
             if (atRoot) toolbar.navigationIcon = null else toolbar.setNavigationIcon(R.drawable.ic_back)
             val rows = ArrayList<LibraryAdapter.Row>()
@@ -209,7 +207,19 @@ class MainActivity : AppCompatActivity() {
                 val (label, target) = f.collapsed()
                 rows += LibraryAdapter.Row.Folder(label, target, isVolume = atRoot && f.name in volumeLabels)
             }
-            current.sortedVideos().forEach { rows += LibraryAdapter.Row.Video(it, showFolder = false) }
+            if (atRoot) {
+                // Home screen shows folders only: loose videos at the storage root get their own folder.
+                if (root.videos.isNotEmpty()) {
+                    val loose = looseFolder ?: FolderNode("Videos in main storage", root).also { n ->
+                        n.videos += root.videos
+                        n.finish()
+                        looseFolder = n
+                    }
+                    rows += LibraryAdapter.Row.Folder(loose.name, loose, isVolume = false)
+                }
+            } else {
+                current.sortedVideos().forEach { rows += LibraryAdapter.Row.Video(it, showFolder = false) }
+            }
             adapter.submit(rows)
         }
     }
@@ -266,6 +276,7 @@ class MainActivity : AppCompatActivity() {
             progress.visibility = View.GONE
             allVideos = items
             root = tree
+            looseFolder = null
             current = restorePath?.let { tree.find(it) } ?: tree
             restorePath = null
             render()

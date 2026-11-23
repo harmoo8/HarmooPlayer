@@ -25,4 +25,5 @@
     <string name="lock_rotation">Rotate</string>
     <string name="view_all">Show all videos</string>
     <string name="view_folders">Browse folders</string>
+    <string name="display_size">Display size</string>
 </resources>

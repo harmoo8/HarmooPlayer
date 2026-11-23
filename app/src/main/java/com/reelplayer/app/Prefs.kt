@@ -59,6 +59,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("browse_folders", true)
         set(v) = sp.edit().putBoolean("browse_folders", v).apply()
 
+    /** Library text + thumbnail size: 0 = small, 1 = medium, 2 = large. */
+    var listSize: Int
+        get() = sp.getInt("list_size", 1)
+        set(v) = sp.edit().putInt("list_size", v.coerceIn(0, 2)).apply()
+
     // ---- per-video memory: resume position and the subtitle the user picked ----
 
     fun getPosition(video: Uri): Long = sp.getLong("pos:$video", 0)

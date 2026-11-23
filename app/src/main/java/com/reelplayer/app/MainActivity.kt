@@ -12,6 +12,7 @@ import android.provider.MediaStore
 import android.text.format.Formatter
 import android.util.LruCache
 import android.util.Size
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -91,12 +92,31 @@ class MainActivity : AppCompatActivity() {
         list.layoutManager = LinearLayoutManager(this)
         list.adapter = adapter
         adapter.thumbLoader = { item, view -> loadThumb(item, view) }
+        adapter.sizeLevel = prefs.listSize
 
         findViewById<View>(R.id.fab).setOnClickListener { openDocument.launch(arrayOf("video/*", "application/*", "*/*")) }
         grantButton.setOnClickListener { askPermission() }
 
         restorePath = savedInstanceState?.getStringArrayList("path")
         if (hasPermission()) loadVideos() else askPermission()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Picks up a change made in Settings.
+        if (adapter.sizeLevel != prefs.listSize) adapter.sizeLevel = prefs.listSize
+    }
+
+    private fun chooseSize() {
+        val names = arrayOf("Small", "Medium", "Large")
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.display_size)
+            .setSingleChoiceItems(names, prefs.listSize) { d, which ->
+                prefs.listSize = which
+                adapter.sizeLevel = which
+                d.dismiss()
+            }
+            .show()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -124,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_refresh -> { restorePath = current.path; loadVideos(); true }
         R.id.action_url -> { askUrl(); true }
+        R.id.action_size -> { chooseSize(); true }
         R.id.action_view -> {
             prefs.browseFolders = !prefs.browseFolders
             invalidateOptionsMenu()
@@ -346,6 +367,19 @@ class LibraryAdapter(
     private var rows: List<Row> = emptyList()
     var thumbLoader: ((VideoItem, ImageView) -> Unit)? = null
 
+    /** 0 = small, 1 = medium, 2 = large. */
+    var sizeLevel: Int = 1
+        set(v) { field = v; notifyDataSetChanged() }
+
+    private class Dims(val title: Float, val meta: Float, val thumbW: Int, val thumbH: Int, val icon: Int, val iconPad: Int, val lines: Int)
+    private val dims = listOf(
+        Dims(title = 14f, meta = 11f, thumbW = 96, thumbH = 54, icon = 40, iconPad = 10, lines = 1),
+        Dims(title = 16f, meta = 12f, thumbW = 120, thumbH = 68, icon = 48, iconPad = 12, lines = 2),
+        Dims(title = 19f, meta = 14f, thumbW = 168, thumbH = 95, icon = 58, iconPad = 15, lines = 3),
+    )
+
+    private fun View.dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
     fun submit(newRows: List<Row>) {
         rows = newRows
         notifyDataSetChanged()
@@ -376,7 +410,13 @@ class LibraryAdapter(
         when (val row = rows[position]) {
             is Row.Folder -> {
                 h as FolderVH
+                val d = dims[sizeLevel]
                 h.name.text = row.label
+                h.name.setTextSize(TypedValue.COMPLEX_UNIT_SP, d.title)
+                h.count.setTextSize(TypedValue.COMPLEX_UNIT_SP, d.meta)
+                h.name.maxLines = d.lines
+                h.icon.layoutParams = h.icon.layoutParams.apply { width = h.icon.dp(d.icon); height = h.icon.dp(d.icon) }
+                h.icon.setPadding(h.icon.dp(d.iconPad), h.icon.dp(d.iconPad), h.icon.dp(d.iconPad), h.icon.dp(d.iconPad))
                 h.icon.setImageResource(if (row.isVolume) R.drawable.ic_storage else R.drawable.ic_folder)
                 val n = row.node
                 val subs = n.children.size
@@ -389,7 +429,12 @@ class LibraryAdapter(
             is Row.Video -> {
                 h as VideoVH
                 val item = row.item
+                val d = dims[sizeLevel]
                 h.title.text = item.name
+                h.title.setTextSize(TypedValue.COMPLEX_UNIT_SP, d.title)
+                h.meta.setTextSize(TypedValue.COMPLEX_UNIT_SP, d.meta)
+                h.title.maxLines = d.lines
+                h.thumb.layoutParams = h.thumb.layoutParams.apply { width = h.thumb.dp(d.thumbW); height = h.thumb.dp(d.thumbH) }
                 val parts = listOfNotNull(
                     item.durationMs.takeIf { it > 0 }?.let { formatTime(it) },
                     Formatter.formatShortFileSize(h.itemView.context, item.size).takeIf { item.size > 0 },

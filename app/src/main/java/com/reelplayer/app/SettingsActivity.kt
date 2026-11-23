@@ -5,6 +5,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 
 class SettingsActivity : AppCompatActivity() {
@@ -24,6 +25,9 @@ class SettingsActivity : AppCompatActivity() {
         val hw = findViewById<MaterialSwitch>(R.id.hwDecode)
         val encoding = findViewById<EditText>(R.id.encoding)
         val subSize = findViewById<EditText>(R.id.subSize)
+        val sizeGroup = findViewById<MaterialButtonToggleGroup>(R.id.sizeGroup)
+        val sizeIds = listOf(R.id.sizeSmall, R.id.sizeMedium, R.id.sizeLarge)
+        sizeGroup.check(sizeIds[prefs.listSize])
 
         languages.setText(prefs.languages)
         osKey.setText(prefs.osApiKey)
@@ -41,6 +45,7 @@ class SettingsActivity : AppCompatActivity() {
             if (osUser.text.toString().trim() != prefs.osUser) prefs.osUser = osUser.text.toString()
             if (osPass.text.toString() != prefs.osPass) prefs.osPass = osPass.text.toString()
             prefs.subdlApiKey = subdlKey.text.toString()
+            prefs.listSize = sizeIds.indexOf(sizeGroup.checkedButtonId).coerceAtLeast(0)
             prefs.hwDecoding = hw.isChecked
             prefs.subEncoding = encoding.text.toString()
             subSize.text.toString().toIntOrNull()?.let { prefs.subSizePercent = it }

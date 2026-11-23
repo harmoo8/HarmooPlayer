@@ -67,7 +67,8 @@ class SubtitleSearchActivity : AppCompatActivity() {
         fileName = intent.getStringExtra(EXTRA_FILE_NAME).orEmpty()
         movieHash = intent.getStringExtra(EXTRA_HASH)
         fileSize = intent.getLongExtra(EXTRA_SIZE, -1)
-        parsed = NameParser.parse(fileName)
+        parsed = runCatching { NameParser.parse(fileName) }
+            .getOrElse { NameParser.Parsed(fileName.substringBeforeLast('.'), null, null, null) }
 
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
         findViewById<TextView>(R.id.fileName).text = fileName

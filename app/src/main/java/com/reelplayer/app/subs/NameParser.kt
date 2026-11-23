@@ -22,7 +22,8 @@ object NameParser {
 
     fun parse(fileName: String): Parsed {
         var s = fileName.substringBeforeLast('.', fileName)
-        s = s.replace(Regex("""\[[^\]]*]|\{[^}]*}"""), " ")   // [group] tags
+        // Android's regex engine (ICU) needs ] and } escaped, unlike desktop Java.
+        s = s.replace(Regex("""\[[^\]]*\]|\{[^\}]*\}"""), " ")   // [group] tags
         s = s.replace('_', ' ').replace('.', ' ').replace(Regex("\\s+"), " ").trim()
 
         var season: Int? = null

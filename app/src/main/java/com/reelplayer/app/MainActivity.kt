@@ -98,7 +98,26 @@ class MainActivity : AppCompatActivity() {
         grantButton.setOnClickListener { askPermission() }
 
         restorePath = savedInstanceState?.getStringArrayList("path")
+        showLastCrash()
         if (hasPermission()) loadVideos() else askPermission()
+    }
+
+    private fun showLastCrash() {
+        val f = App.crashFile(application)
+        if (!f.exists()) return
+        val report = runCatching { f.readText() }.getOrDefault("")
+        f.delete()
+        if (report.isBlank()) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle("HarmooPlayer closed unexpectedly")
+            .setMessage("Sorry about that. Tap Copy and paste the details to whoever is fixing the app.\n\n" + report.take(1500))
+            .setPositiveButton("Copy") { _, _ ->
+                val cm = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("HarmooPlayer crash", report))
+                android.widget.Toast.makeText(this, "Copied", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     override fun onResume() {

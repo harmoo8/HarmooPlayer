@@ -11,18 +11,19 @@ android {
         applicationId = "com.reelplayer.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        val build = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
+        versionCode = build
+        versionName = "1.0.$build"
     }
 
-    // libVLC ships native code for 4 CPU types. Build one small APK per type
-    // plus a "universal" APK that works everywhere (but is ~4x bigger).
+    // libVLC ships native code for several CPU types. Only build the one modern phones use
+    // (arm64) to keep the download small. Add "armeabi-v7a" here for old 32-bit devices.
     splits {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-            isUniversalApk = true
+            include("arm64-v8a")
+            isUniversalApk = false
         }
     }
 

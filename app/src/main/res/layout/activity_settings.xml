@@ -21,120 +21,152 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="200dp">
 
-            <TextView
-                style="@style/SettingsHeader"
-                android:text="Subtitle languages" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Comma-separated codes, e.g. en,es,fr"
-                app:helperText="Searched in this order. Two-letter ISO codes.">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/languages"
+            <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/SettingsHeader"
+                        android:text="Subtitle languages" />
 
-            <TextView
-                style="@style/SettingsHeader"
-                android:text="OpenSubtitles.com" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Comma-separated codes, e.g. en,es,fr"
+                        app:helperText="Searched in this order. Two-letter ISO codes.">
 
-            <TextView
-                android:id="@+id/osHelp"
-                style="@style/SettingsHelp"
-                android:text="Free API key: sign up at opensubtitles.com, then open opensubtitles.com/consumers and create a consumer. Logging in with your account is optional but raises your daily download limit." />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/languages"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="API key">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/osKey"
+            <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/SettingsHeader"
+                        android:text="OpenSubtitles.com" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="Username (optional)">
+                    <TextView
+                        android:id="@+id/osHelp"
+                        style="@style/SettingsHelp"
+                        android:text="Free API key: sign up at opensubtitles.com, then open opensubtitles.com/consumers and create a consumer. Logging in with your account is optional but raises your daily download limit." />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/osUser"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="API key">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/osKey"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="Username (optional)">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/osUser"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="Password (optional)"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/osPass"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/SettingsHeader"
+                        android:text="SubDL.com" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="Password (optional)"
-                app:endIconMode="password_toggle">
+                    <TextView
+                        style="@style/SettingsHelp"
+                        android:text="Free API key: sign up at subdl.com, then copy the key from your account’s API panel." />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/osPass"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="API key">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/subdlKey"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/SettingsHeader"
+                        android:text="Playback" />
 
-            <TextView
-                style="@style/SettingsHeader"
-                android:text="SubDL.com" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/hwDecode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                    android:text="Hardware decoding (turn off if a video shows green/garbled frames)" />
 
-            <TextView
-                style="@style/SettingsHelp"
-                android:text="Free API key: sign up at subdl.com, then copy the key from your account’s API panel." />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="Subtitle text encoding (blank = auto)"
+                        app:helperText="e.g. Windows-1250 for Central European, Windows-1256 for Arabic, CP1251 for Cyrillic">
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="API key">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/encoding"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/subdlKey"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/SettingsField"
+                        android:hint="Subtitle size (%)"
+                        app:helperText="100 = default">
 
-            <TextView
-                style="@style/SettingsHeader"
-                android:text="Playback" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/hwDecode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Hardware decoding (turn off if a video shows green/garbled frames)" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="Subtitle text encoding (blank = auto)"
-                app:helperText="e.g. Windows-1250 for Central European, Windows-1256 for Arabic, CP1251 for Cyrillic">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/encoding"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/SettingsField"
-                android:hint="Subtitle size (%)"
-                app:helperText="100 = default">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/subSize"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number" />
-            </com.google.android.material.textfield.TextInputLayout>
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/subSize"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 
@@ -142,6 +174,9 @@
         android:id="@+id/saveButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="@string/save" />
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="20dp"
+        android:minHeight="52dp"
+        android:text="@string/save"
+        app:cornerRadius="16dp" />
 </LinearLayout>

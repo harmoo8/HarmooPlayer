@@ -20,6 +20,7 @@
         android:ellipsize="middle"
         android:maxLines="1"
         android:paddingHorizontal="16dp"
+        android:textColor="@color/ink_soft"
         android:textAppearance="?attr/textAppearanceBodySmall" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -91,8 +92,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/search" />
+        android:layout_marginTop="12dp"
+        android:minHeight="52dp"
+        android:text="@string/search"
+        app:cornerRadius="16dp" />
 
     <TextView
         android:id="@+id/status"
@@ -102,17 +105,23 @@
         android:paddingVertical="8dp"
         android:textAppearance="?attr/textAppearanceBodyMedium" />
 
-    <ProgressBar
+    <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progress"
-        style="?android:attr/progressBarStyleHorizontal"
+        style="@style/Widget.Material3.LinearProgressIndicator"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
         android:indeterminate="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:indicatorColor="@color/lavender_500"
+        app:trackColor="@color/lavender_100"
+        app:trackCornerRadius="4dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/results"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="120dp" />
 </LinearLayout>

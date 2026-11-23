@@ -6,7 +6,10 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -25,7 +28,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingBottom="88dp" />
+            android:paddingHorizontal="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="96dp" />
 
         <LinearLayout
             android:id="@+id/empty"
@@ -42,7 +47,8 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/no_videos"
-                android:textAppearance="?attr/textAppearanceBodyLarge" />
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="@color/ink_soft" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/grantButton"
@@ -67,6 +73,10 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+        android:layout_marginBottom="24dp"
         android:text="@string/open_file"
-        app:icon="@drawable/ic_folder" />
+        android:textColor="#FFFFFF"
+        app:backgroundTint="@color/lavender_700"
+        app:icon="@drawable/ic_folder"
+        app:iconTint="#FFFFFF" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

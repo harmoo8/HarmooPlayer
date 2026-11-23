@@ -22,10 +22,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/scrim"
-        android:padding="12dp"
+        android:background="@drawable/bg_pill"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="10dp"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:visibility="gone" />
 
     <FrameLayout
@@ -38,11 +39,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="top"
-            android:background="@color/scrim"
+            android:background="@drawable/scrim_top"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp">
+            android:paddingHorizontal="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="40dp">
 
             <ImageButton
                 android:id="@+id/btnBack"
@@ -54,10 +56,13 @@
                 android:id="@+id/title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
+                android:layout_marginHorizontal="12dp"
                 android:layout_weight="1"
                 android:ellipsize="middle"
+                android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
+                android:shadowColor="#80000000"
+                android:shadowRadius="4"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
@@ -102,9 +107,11 @@
             <ImageButton
                 android:id="@+id/btnPlay"
                 style="@style/PlayerButton.Big"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginHorizontal="32dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_marginHorizontal="36dp"
+                android:background="@drawable/bg_play_circle"
+                android:padding="22dp"
                 android:contentDescription="@string/play_pause"
                 android:src="@drawable/ic_pause" />
 
@@ -119,11 +126,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:background="@color/scrim"
+            android:background="@drawable/scrim_bottom"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="40dp"
+            android:paddingBottom="16dp">
 
             <TextView
                 android:id="@+id/timeCurrent"
@@ -138,7 +146,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:max="1000" />
+                android:max="1000"
+                android:progressBackgroundTint="#66FFFFFF"
+                android:progressTint="@color/lavender_300"
+                android:thumbTint="#FFFFFF" />
 
             <TextView
                 android:id="@+id/timeTotal"

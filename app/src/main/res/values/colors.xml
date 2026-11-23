@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lavender -->
+    <color name="lavender_50">#F7F4FC</color>
+    <color name="lavender_100">#EEE8F8</color>
+    <color name="lavender_200">#DDD3F1</color>
+    <color name="lavender_300">#C5B6E6</color>
+    <color name="lavender_500">#9A86CF</color>
+    <color name="lavender_700">#6F5CA8</color>
+    <!-- Meadow -->
+    <color name="meadow_200">#D6E6CF</color>
+    <color name="meadow_400">#A9C9A0</color>
+    <color name="meadow_600">#7FA877</color>
+    <!-- Coastal -->
+    <color name="sea_200">#D3E9EC</color>
+    <color name="sea_400">#93C6CE</color>
+    <color name="sea_600">#5E9DAA</color>
+    <color name="sand">#F6EFE4</color>
+    <!-- Text -->
+    <color name="ink">#2E2A3B</color>
+    <color name="ink_soft">#6E6882</color>
+
+    <color name="card">#D9FFFFFF</color>
+    <color name="scrim_top">#99000000</color>
+    <color name="scrim_clear">#00000000</color>
+    <color name="glass">#26FFFFFF</color>
+    <color name="lav_glass">#E69A86CF</color>
+</resources>

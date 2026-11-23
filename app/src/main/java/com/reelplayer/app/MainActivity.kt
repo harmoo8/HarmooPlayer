@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,6 +45,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emptyText: TextView
     private lateinit var grantButton: MaterialButton
     private lateinit var progress: View
+    private lateinit var home: View
+    private lateinit var fab: ExtendedFloatingActionButton
+    private var inHome = true
     private val adapter = LibraryAdapter(
         onVideo = { play(it.uri) },
         onFolder = { openFolder(it) },
@@ -56,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     private var restorePath: List<String>? = null
 
     private val backToParent = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() = goUp()
+        override fun handleOnBackPressed() = navigateBack()
     }
 
     private val videoPermission: String
@@ -82,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         prefs.browseFolders = true // always start on the folder browser
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
-        toolbar.setNavigationOnClickListener { goUp() }
+        toolbar.setNavigationOnClickListener { navigateBack() }
         onBackPressedDispatcher.addCallback(this, backToParent)
 
         list = findViewById(R.id.list)
@@ -90,18 +94,23 @@ class MainActivity : AppCompatActivity() {
         emptyText = findViewById(R.id.emptyText)
         grantButton = findViewById(R.id.grantButton)
         progress = findViewById(R.id.progress)
+        home = findViewById(R.id.home)
+        fab = findViewById(R.id.fab)
+        findViewById<View>(R.id.browseButton).setOnClickListener { startBrowsing() }
 
         list.layoutManager = LinearLayoutManager(this)
         list.adapter = adapter
         adapter.thumbLoader = { item, view -> loadThumb(item, view) }
         adapter.sizeLevel = prefs.listSize
 
-        findViewById<View>(R.id.fab).setOnClickListener { openDocument.launch(arrayOf("video/*", "application/*", "*/*")) }
+        fab.setOnClickListener { openDocument.launch(arrayOf("video/*", "application/*", "*/*")) }
         grantButton.setOnClickListener { askPermission() }
 
         restorePath = savedInstanceState?.getStringArrayList("path")
+        inHome = savedInstanceState?.getBoolean("home", true) ?: true
         showLastCrash()
-        if (hasPermission()) loadVideos() else askPermission()
+        if (hasPermission()) loadVideos()   // preload quietly so Browse opens instantly
+        render()
     }
 
     private fun showLastCrash() {
@@ -143,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList("path", ArrayList(current.path))
+        outState.putBoolean("home", inHome)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -151,6 +161,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        for (id in listOf(R.id.action_view, R.id.action_url, R.id.action_size, R.id.action_refresh))
+            menu.findItem(id)?.isVisible = !inHome
         menu.findItem(R.id.action_view)?.apply {
             setTitle(if (prefs.browseFolders) R.string.view_all else R.string.view_folders)
         }
@@ -173,35 +185,67 @@ class MainActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ browsing
 
+    private fun startBrowsing() {
+        inHome = false
+        current = root
+        if (hasPermission()) {
+            if (allVideos.isEmpty()) loadVideos() else render()
+        } else {
+            render()
+            askPermission()
+        }
+    }
+
     private fun openFolder(node: FolderNode) {
         current = node
         render()
         list.scrollToPosition(0)
     }
 
+    private fun navigateBack() {
+        if (!prefs.browseFolders) { prefs.browseFolders = true; inHome = true; render() } else goUp()
+    }
+
     /** Up one level, skipping folders that only pass through to a single sub-folder. */
     private fun goUp() {
-        var p = current.parent ?: return
+        var p = current.parent ?: run { inHome = true; render(); return }
         while (p.parent != null && p.videos.isEmpty() && p.children.size == 1) p = p.parent!!
         current = p
         render()
     }
 
     private fun render() {
+        invalidateOptionsMenu()
+        if (inHome) {
+            backToParent.isEnabled = false
+            home.visibility = View.VISIBLE
+            list.visibility = View.GONE
+            empty.visibility = View.GONE
+            progress.visibility = View.GONE
+            fab.hide()
+            toolbar.title = ""
+            toolbar.subtitle = null
+            toolbar.navigationIcon = null
+            return
+        }
+        home.visibility = View.GONE
+        list.visibility = View.VISIBLE
+        fab.show()
+
         val folders = prefs.browseFolders
         val atRoot = current === root
-        backToParent.isEnabled = folders && !atRoot
+        backToParent.isEnabled = true
 
         if (!folders) {
             toolbar.title = getString(R.string.app_name)
             toolbar.subtitle = "All videos · newest first"
-            toolbar.navigationIcon = null
+            toolbar.setNavigationIcon(R.drawable.ic_back)
             adapter.submit(allVideos.sortedByDescending { it.dateAdded }.map { LibraryAdapter.Row.Video(it, showFolder = true) })
         } else {
-            toolbar.title = if (atRoot) getString(R.string.app_name) else current.name
+            toolbar.title = if (atRoot) getString(R.string.browse) else current.name
             toolbar.subtitle = if (atRoot) "Choose a folder"
             else current.path.dropLast(1).joinToString(" › ").ifEmpty { "Storage" }
-            if (atRoot) toolbar.navigationIcon = null else toolbar.setNavigationIcon(R.drawable.ic_back)
+            toolbar.setNavigationIcon(R.drawable.ic_back)
             val rows = ArrayList<LibraryAdapter.Row>()
             current.sortedFolders().forEach { f ->
                 val (label, target) = f.collapsed()
@@ -262,6 +306,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadVideos() {
         if (!hasPermission()) {
+            if (inHome) return
             adapter.submit(emptyList())
             empty.visibility = View.VISIBLE
             emptyText.setText(R.string.need_permission)
@@ -269,7 +314,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         grantButton.visibility = View.GONE
-        progress.visibility = View.VISIBLE
+        if (!inHome) progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) { queryVideos() }
             val tree = withContext(Dispatchers.Default) { FolderNode.build(items) }
@@ -280,8 +325,10 @@ class MainActivity : AppCompatActivity() {
             current = restorePath?.let { tree.find(it) } ?: tree
             restorePath = null
             render()
-            empty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-            emptyText.setText(R.string.no_videos)
+            if (!inHome) {
+                empty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+                emptyText.setText(R.string.no_videos)
+            }
         }
     }
 

@@ -59,6 +59,41 @@
                 android:visibility="gone" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/home"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="120dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:letterSpacing="0.04"
+                android:text="@string/app_name"
+                android:textColor="@color/ink"
+                android:textSize="34sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/browseButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:minWidth="180dp"
+                android:minHeight="56dp"
+                android:paddingHorizontal="28dp"
+                android:text="@string/browse"
+                android:textSize="17sp"
+                app:backgroundTint="@color/lavender_700"
+                app:cornerRadius="28dp"
+                app:icon="@drawable/ic_folder"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="#FFFFFF" />
+        </LinearLayout>
+
         <ProgressBar
             android:id="@+id/progress"
             android:layout_width="wrap_content"

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="PlayerButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="tint">#FFFFFF</item>
+    </style>
+
+    <style name="PlayerButton.Big">
+        <item name="android:layout_width">64dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <style name="SettingsHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textColor">@color/accent</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+    </style>
+
+    <style name="SettingsHelp">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:alpha">0.75</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+    </style>
+
+    <style name="SettingsField" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+    </style>
+</resources>

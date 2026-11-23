@@ -54,6 +54,11 @@ class Prefs(context: Context) {
         get() = sp.getInt("sub_size", 100)
         set(v) = sp.edit().putInt("sub_size", v.coerceIn(30, 300)).apply()
 
+    /** Library view: true = browse folders, false = one list of all videos. */
+    var browseFolders: Boolean
+        get() = sp.getBoolean("browse_folders", true)
+        set(v) = sp.edit().putBoolean("browse_folders", v).apply()
+
     // ---- per-video memory: resume position and the subtitle the user picked ----
 
     fun getPosition(video: Uri): Long = sp.getLong("pos:$video", 0)

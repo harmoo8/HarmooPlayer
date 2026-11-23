@@ -20,6 +20,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -33,16 +34,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class VideoItem(val id: Long, val uri: Uri, val name: String, val durationMs: Long, val size: Long, val folder: String?)
-
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var prefs: Prefs
+    private lateinit var toolbar: MaterialToolbar
     private lateinit var list: RecyclerView
     private lateinit var empty: View
     private lateinit var emptyText: TextView
     private lateinit var grantButton: MaterialButton
     private lateinit var progress: View
-    private val adapter = VideoAdapter { play(it.uri) }
+    private val adapter = LibraryAdapter(
+        onVideo = { play(it.uri) },
+        onFolder = { openFolder(it) },
+    )
+
+    private var allVideos: List<VideoItem> = emptyList()
+    private var root = FolderNode("", null)
+    private var current = root
+    private var restorePath: List<String>? = null
+
+    private val backToParent = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = goUp()
+    }
 
     private val videoPermission: String
         get() = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_VIDEO
@@ -63,7 +76,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(findViewById<MaterialToolbar>(R.id.toolbar))
+        prefs = Prefs(this)
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        toolbar.setNavigationOnClickListener { goUp() }
+        onBackPressedDispatcher.addCallback(this, backToParent)
 
         list = findViewById(R.id.list)
         empty = findViewById(R.id.empty)
@@ -78,7 +95,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.fab).setOnClickListener { openDocument.launch(arrayOf("video/*", "application/*", "*/*")) }
         grantButton.setOnClickListener { askPermission() }
 
+        restorePath = savedInstanceState?.getStringArrayList("path")
         if (hasPermission()) loadVideos() else askPermission()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArrayList("path", ArrayList(current.path))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -86,12 +109,72 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_view)?.apply {
+            if (prefs.browseFolders) {
+                setIcon(R.drawable.ic_list); setTitle(R.string.view_all)
+            } else {
+                setIcon(R.drawable.ic_folder); setTitle(R.string.view_folders)
+            }
+        }
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
-        R.id.action_refresh -> { loadVideos(); true }
+        R.id.action_refresh -> { restorePath = current.path; loadVideos(); true }
         R.id.action_url -> { askUrl(); true }
+        R.id.action_view -> {
+            prefs.browseFolders = !prefs.browseFolders
+            invalidateOptionsMenu()
+            render()
+            true
+        }
         else -> super.onOptionsItemSelected(item)
     }
+
+    // ------------------------------------------------------------------ browsing
+
+    private fun openFolder(node: FolderNode) {
+        current = node
+        render()
+        list.scrollToPosition(0)
+    }
+
+    /** Up one level, skipping folders that only pass through to a single sub-folder. */
+    private fun goUp() {
+        var p = current.parent ?: return
+        while (p.parent != null && p.videos.isEmpty() && p.children.size == 1) p = p.parent!!
+        current = p
+        render()
+    }
+
+    private fun render() {
+        val folders = prefs.browseFolders
+        val atRoot = current === root
+        backToParent.isEnabled = folders && !atRoot
+
+        if (!folders) {
+            toolbar.title = getString(R.string.app_name)
+            toolbar.subtitle = "All videos · newest first"
+            toolbar.navigationIcon = null
+            adapter.submit(allVideos.sortedByDescending { it.dateAdded }.map { LibraryAdapter.Row.Video(it, showFolder = true) })
+        } else {
+            toolbar.title = if (atRoot) getString(R.string.app_name) else current.name
+            toolbar.subtitle = if (atRoot) "Folders with videos"
+            else current.path.dropLast(1).joinToString(" › ").ifEmpty { "Storage" }
+            if (atRoot) toolbar.navigationIcon = null else toolbar.setNavigationIcon(R.drawable.ic_back)
+            val rows = ArrayList<LibraryAdapter.Row>()
+            current.sortedFolders().forEach { f ->
+                val (label, target) = f.collapsed()
+                rows += LibraryAdapter.Row.Folder(label, target, isVolume = atRoot && f.name in volumeLabels)
+            }
+            current.sortedVideos().forEach { rows += LibraryAdapter.Row.Video(it, showFolder = false) }
+            adapter.submit(rows)
+        }
+    }
+
+    // ------------------------------------------------------------------ loading
 
     private fun askUrl() {
         val input = EditText(this).apply { hint = "https://…/video.mkv"; setSingleLine() }
@@ -139,46 +222,92 @@ class MainActivity : AppCompatActivity() {
         progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) { queryVideos() }
+            val tree = withContext(Dispatchers.Default) { FolderNode.build(items) }
             progress.visibility = View.GONE
-            adapter.submit(items)
+            allVideos = items
+            root = tree
+            current = restorePath?.let { tree.find(it) } ?: tree
+            restorePath = null
+            render()
             empty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             emptyText.setText(R.string.no_videos)
         }
     }
 
+    private val volumeLabels = HashSet<String>()
+
+    @Suppress("DEPRECATION")
     private fun queryVideos(): List<VideoItem> {
-        val out = ArrayList<VideoItem>()
         val collection = if (Build.VERSION.SDK_INT >= 29)
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        val projection = arrayOf(
+        val cols = arrayListOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.DISPLAY_NAME,
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.SIZE,
-            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+            MediaStore.Video.Media.DATE_ADDED,
         )
+        if (Build.VERSION.SDK_INT >= 29) {
+            cols += MediaStore.Video.Media.RELATIVE_PATH
+            cols += MediaStore.Video.Media.VOLUME_NAME
+        } else {
+            cols += MediaStore.Video.Media.DATA
+        }
+
+        // First pass: raw (volume, folder list) per video.
+        data class Raw(val id: Long, val name: String, val dur: Long, val size: Long, val added: Long, val vol: String, val dirs: List<String>)
+        val raws = ArrayList<Raw>()
         runCatching {
-            contentResolver.query(collection, projection, null, null, "${MediaStore.Video.Media.DATE_ADDED} DESC")?.use { c ->
-                val idCol = c.getColumnIndexOrThrow(projection[0])
-                val nameCol = c.getColumnIndexOrThrow(projection[1])
-                val durCol = c.getColumnIndexOrThrow(projection[2])
-                val sizeCol = c.getColumnIndexOrThrow(projection[3])
-                val bucketCol = c.getColumnIndexOrThrow(projection[4])
+            contentResolver.query(collection, cols.toTypedArray(), null, null, null)?.use { c ->
+                val idCol = c.getColumnIndexOrThrow(cols[0])
+                val nameCol = c.getColumnIndexOrThrow(cols[1])
+                val durCol = c.getColumnIndexOrThrow(cols[2])
+                val sizeCol = c.getColumnIndexOrThrow(cols[3])
+                val addedCol = c.getColumnIndexOrThrow(cols[4])
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
-                    out += VideoItem(
-                        id = id,
-                        uri = ContentUris.withAppendedId(collection, id),
-                        name = c.getString(nameCol) ?: "Video $id",
-                        durationMs = c.getLong(durCol),
-                        size = c.getLong(sizeCol),
-                        folder = c.getString(bucketCol),
-                    )
+                    val (vol, dirs) = if (Build.VERSION.SDK_INT >= 29) {
+                        val rel = c.getString(c.getColumnIndexOrThrow(cols[5])).orEmpty()
+                        val v = c.getString(c.getColumnIndexOrThrow(cols[6])) ?: MediaStore.VOLUME_EXTERNAL_PRIMARY
+                        v to rel.split('/').filter { it.isNotBlank() }
+                    } else {
+                        parseDataPath(c.getString(c.getColumnIndexOrThrow(cols[5])).orEmpty())
+                    }
+                    raws += Raw(id, c.getString(nameCol) ?: "Video $id", c.getLong(durCol), c.getLong(sizeCol), c.getLong(addedCol), vol, dirs)
                 }
             }
         }
-        return out
+
+        // Only show "Phone storage" / "SD card" at the top when there's more than one.
+        val volumes = raws.map { it.vol }.distinct()
+        val multi = volumes.size > 1
+        volumeLabels.clear()
+        return raws.map { r ->
+            val label = volumeLabel(r.vol)
+            if (multi) volumeLabels += label
+            VideoItem(
+                id = r.id,
+                uri = ContentUris.withAppendedId(collection, r.id),
+                name = r.name,
+                durationMs = r.dur,
+                size = r.size,
+                dateAdded = r.added,
+                folders = if (multi) listOf(label) + r.dirs else r.dirs,
+            )
+        }
     }
+
+    private fun parseDataPath(path: String): Pair<String, List<String>> {
+        val m = Regex("^/storage/(emulated/\\d+|[^/]+)/(.*)$").find(path)
+        val (vol, rest) = if (m != null) {
+            val v = m.groupValues[1]
+            (if (v.startsWith("emulated")) "external_primary" else v.lowercase()) to m.groupValues[2]
+        } else "external_primary" to path.trimStart('/')
+        return vol to rest.split('/').dropLast(1).filter { it.isNotBlank() }
+    }
+
+    private fun volumeLabel(vol: String) =
+        if (vol == "external_primary" || vol == "external") "Phone storage" else "SD card / USB (${vol.uppercase()})"
 
     private val thumbs = LruCache<Long, Bitmap>(80)
 
@@ -204,38 +333,74 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class VideoAdapter(private val onClick: (VideoItem) -> Unit) : RecyclerView.Adapter<VideoAdapter.VH>() {
-    private var items: List<VideoItem> = emptyList()
+class LibraryAdapter(
+    private val onVideo: (VideoItem) -> Unit,
+    private val onFolder: (FolderNode) -> Unit,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    sealed class Row {
+        data class Folder(val label: String, val node: FolderNode, val isVolume: Boolean) : Row()
+        data class Video(val item: VideoItem, val showFolder: Boolean) : Row()
+    }
+
+    private var rows: List<Row> = emptyList()
     var thumbLoader: ((VideoItem, ImageView) -> Unit)? = null
 
-    fun submit(newItems: List<VideoItem>) {
-        items = newItems
+    fun submit(newRows: List<Row>) {
+        rows = newRows
         notifyDataSetChanged()
     }
 
-    class VH(v: View) : RecyclerView.ViewHolder(v) {
+    class FolderVH(v: View) : RecyclerView.ViewHolder(v) {
+        val icon: ImageView = v.findViewById(R.id.icon)
+        val name: TextView = v.findViewById(R.id.name)
+        val count: TextView = v.findViewById(R.id.count)
+    }
+
+    class VideoVH(v: View) : RecyclerView.ViewHolder(v) {
         val thumb: ImageView = v.findViewById(R.id.thumb)
         val title: TextView = v.findViewById(R.id.title)
         val meta: TextView = v.findViewById(R.id.meta)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_video, parent, false))
+    override fun getItemViewType(position: Int) = if (rows[position] is Row.Folder) 0 else 1
+    override fun getItemCount() = rows.size
 
-    override fun getItemCount() = items.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inf = LayoutInflater.from(parent.context)
+        return if (viewType == 0) FolderVH(inf.inflate(R.layout.item_folder, parent, false))
+        else VideoVH(inf.inflate(R.layout.item_video, parent, false))
+    }
 
-    override fun onBindViewHolder(h: VH, position: Int) {
-        val item = items[position]
-        h.title.text = item.name
-        val parts = listOfNotNull(
-            item.durationMs.takeIf { it > 0 }?.let { formatTime(it) },
-            Formatter.formatShortFileSize(h.itemView.context, item.size).takeIf { item.size > 0 },
-            item.name.substringAfterLast('.', "").uppercase().takeIf { it.length in 2..4 },
-            item.folder,
-        )
-        h.meta.text = parts.joinToString("  ·  ")
-        thumbLoader?.invoke(item, h.thumb)
-        h.itemView.setOnClickListener { onClick(item) }
+    override fun onBindViewHolder(h: RecyclerView.ViewHolder, position: Int) {
+        when (val row = rows[position]) {
+            is Row.Folder -> {
+                h as FolderVH
+                h.name.text = row.label
+                h.icon.setImageResource(if (row.isVolume) R.drawable.ic_storage else R.drawable.ic_folder)
+                val n = row.node
+                val subs = n.children.size
+                h.count.text = listOfNotNull(
+                    "${n.totalVideos} video${if (n.totalVideos == 1) "" else "s"}",
+                    subs.takeIf { it > 0 }?.let { "$it folder${if (it == 1) "" else "s"}" },
+                ).joinToString("  ·  ")
+                h.itemView.setOnClickListener { onFolder(n) }
+            }
+            is Row.Video -> {
+                h as VideoVH
+                val item = row.item
+                h.title.text = item.name
+                val parts = listOfNotNull(
+                    item.durationMs.takeIf { it > 0 }?.let { formatTime(it) },
+                    Formatter.formatShortFileSize(h.itemView.context, item.size).takeIf { item.size > 0 },
+                    item.name.substringAfterLast('.', "").uppercase().takeIf { it.length in 2..4 },
+                    item.folders.lastOrNull()?.takeIf { row.showFolder },
+                )
+                h.meta.text = parts.joinToString("  ·  ")
+                thumbLoader?.invoke(item, h.thumb)
+                h.itemView.setOnClickListener { onVideo(item) }
+            }
+        }
     }
 }
 

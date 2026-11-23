@@ -23,4 +23,6 @@
     <string name="back">Back</string>
     <string name="save">Save</string>
     <string name="lock_rotation">Rotate</string>
+    <string name="view_all">Show all videos</string>
+    <string name="view_folders">Browse folders</string>
 </resources>
